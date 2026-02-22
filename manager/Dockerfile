@@ -80,6 +80,8 @@ COPY --from=openclaw-build /usr/local/bin/node /usr/local/bin/node
 COPY --from=openclaw-build /usr/local/bin/npm /usr/local/bin/npm
 COPY --from=openclaw-build /usr/local/bin/npx /usr/local/bin/npx
 COPY --from=openclaw-build /usr/local/lib/node_modules /usr/local/lib/node_modules
+# Create pnpm symlinks
+RUN ln -sf /usr/local/lib/node_modules/pnpm/bin/pnpm.cjs /usr/local/bin/pnpm && ln -sf /usr/local/lib/node_modules/pnpm/bin/pnpx.cjs /usr/local/bin/pnpx
 
 # OpenClaw (full source build)
 COPY --from=openclaw-build /opt/openclaw /opt/openclaw

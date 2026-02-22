@@ -142,6 +142,9 @@ fi
 
 # ============================================================
 # 6. MCP Server: GitHub (if token provided)
+    # First, create DNS service source for GitHub API
+    higress_api POST /v1/service-sources "Creating GitHub API service source" \
+        '{"type":"dns","name":"github-api","domain":"api.github.com","port":443,"protocol":"https"}'
 # ============================================================
 if [ -n "${HICLAW_GITHUB_TOKEN}" ]; then
     MCP_YAML_FILE="/opt/hiclaw/agent/skills/mcp-server-management/references/mcp-github.yaml"
@@ -152,7 +155,7 @@ if [ -n "${HICLAW_GITHUB_TOKEN}" ]; then
         RAW_CONFIG=$(printf '%s' "${MCP_YAML}" | jq -Rs .)
         # Build the full MCP Server body with rawConfigurations
         MCP_BODY=$(cat <<MCPEOF
-{"name":"mcp-github","description":"GitHub MCP Server","type":"OPEN_API","rawConfigurations":${RAW_CONFIG},"mcpServerName":"mcp-github","domains":["mcp-local.hiclaw.io"],"services":[{"name":"11.static","port":80,"version":null,"weight":100}],"consumerAuthInfo":{"type":"key-auth","enable":true,"allowedConsumers":["manager"]}}
+{"name":"mcp-github","description":"GitHub MCP Server","type":"OPEN_API","rawConfigurations":${RAW_CONFIG},"mcpServerName":"mcp-github","domains":["mcp-local.hiclaw.io"],"services":[{"name":"github-api.dns","port":443,"weight":100}],"consumerAuthInfo":{"type":"key-auth","enable":true,"allowedConsumers":["manager"]}}
 MCPEOF
         )
         higress_api PUT /v1/mcpServer "Configuring GitHub MCP Server" \
