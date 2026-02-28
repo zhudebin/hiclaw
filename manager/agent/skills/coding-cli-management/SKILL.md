@@ -9,7 +9,7 @@ This skill enables the Manager to execute AI coding CLI tools (claude/gemini/qod
 
 ## Config File
 
-Path: `~/manager-workspace/coding-cli-config.json`
+Path: `~/coding-cli-config.json`
 
 ```json
 {
@@ -28,7 +28,7 @@ Path: `~/manager-workspace/coding-cli-config.json`
 
 ## Step 1: First-Time Detection (before assigning a coding task)
 
-Run when `~/manager-workspace/coding-cli-config.json` does not exist:
+Run when `~/coding-cli-config.json` does not exist:
 
 ```bash
 bash /opt/hiclaw/agent/skills/coding-cli-management/scripts/detect-available-cli.sh
@@ -37,7 +37,7 @@ bash /opt/hiclaw/agent/skills/coding-cli-management/scripts/detect-available-cli
 **If no CLIs are available** (`available` array is empty):
 ```bash
 echo '{"enabled":false,"cli":null,"confirmed_at":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' \
-  > ~/manager-workspace/coding-cli-config.json
+  > ~/coding-cli-config.json
 ```
 Proceed with normal task assignment (Worker codes on their own).
 
@@ -48,12 +48,12 @@ On admin reply:
 - Tool name (`claude` / `gemini` / `qodercli`):
   ```bash
   echo '{"enabled":true,"cli":"<chosen-tool>","confirmed_at":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' \
-    > ~/manager-workspace/coding-cli-config.json
+    > ~/coding-cli-config.json
   ```
 - `"no"` or decline:
   ```bash
   echo '{"enabled":false,"cli":null,"confirmed_at":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' \
-    > ~/manager-workspace/coding-cli-config.json
+    > ~/coding-cli-config.json
   ```
 
 ---
@@ -94,8 +94,8 @@ workspace: ~/hiclaw-fs/shared/tasks/{task-id}/workspace
 ```bash
 # 1. Sync workspace from MinIO
 task_id="task-YYYYMMDD-HHMMSS"
-workspace="$HOME/hiclaw-fs/shared/tasks/${task_id}/workspace"
-mc mirror "hiclaw/hiclaw-storage/shared/tasks/${task_id}/" "$HOME/hiclaw-fs/shared/tasks/${task_id}/"
+workspace="/root/hiclaw-fs/shared/tasks/${task_id}/workspace"
+mc mirror "hiclaw/hiclaw-storage/shared/tasks/${task_id}/" "/root/hiclaw-fs/shared/tasks/${task_id}/"
 
 # 2. Check for processing marker (task coordination)
 bash /opt/hiclaw/agent/skills/task-coordination/scripts/check-processing-marker.sh "$task_id"
@@ -110,7 +110,7 @@ bash /opt/hiclaw/agent/skills/task-coordination/scripts/create-processing-marker
 
 # 4. Save prompt to file
 timestamp=$(date +%Y%m%d-%H%M%S)
-prompt_dir="$HOME/hiclaw-fs/shared/tasks/${task_id}/coding-prompts"
+prompt_dir="/root/hiclaw-fs/shared/tasks/${task_id}/coding-prompts"
 mkdir -p "$prompt_dir"
 prompt_file="$prompt_dir/${timestamp}.txt"
 cat > "$prompt_file" << 'PROMPT_EOF'
@@ -118,7 +118,7 @@ cat > "$prompt_file" << 'PROMPT_EOF'
 PROMPT_EOF
 
 # 5. Get configured CLI
-cli=$(jq -r '.cli' ~/manager-workspace/coding-cli-config.json)
+cli=$(jq -r '.cli' ~/coding-cli-config.json)
 
 # 6. Run CLI
 bash /opt/hiclaw/agent/skills/coding-cli-management/scripts/run-coding-cli.sh \
@@ -133,7 +133,7 @@ bash /opt/hiclaw/agent/skills/task-coordination/scripts/remove-processing-marker
 
 # 8. On success (exit 0): push changes to MinIO
 if [ "$exit_code" -eq 0 ]; then
-    mc mirror "$HOME/hiclaw-fs/shared/tasks/${task_id}/workspace/" "hiclaw/hiclaw-storage/shared/tasks/${task_id}/workspace/" --overwrite
+    mc mirror "/root/hiclaw-fs/shared/tasks/${task_id}/workspace/" "hiclaw/hiclaw-storage/shared/tasks/${task_id}/workspace/" --overwrite
 fi
 ```
 
@@ -174,8 +174,8 @@ Worker {worker-name} 的编码委托任务 {task-id} 中，{cli} 工具执行失
 ```bash
 jq --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg tid "$task_id" \
    '.last_failure = {task_id: $tid, failed_at: $ts}' \
-   ~/manager-workspace/coding-cli-config.json > /tmp/cfg.json && \
-mv /tmp/cfg.json ~/manager-workspace/coding-cli-config.json
+   ~/coding-cli-config.json > /tmp/cfg.json && \
+mv /tmp/cfg.json ~/coding-cli-config.json
 ```
 
 ---

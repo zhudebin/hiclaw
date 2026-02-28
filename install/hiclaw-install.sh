@@ -884,16 +884,27 @@ EOF
     fi
 
     # Pull images (worker image must be ready before manager creates workers)
-    log "Pulling Manager image: ${MANAGER_IMAGE}"
-    docker pull "${MANAGER_IMAGE}"
-    log "Pulling Worker image: ${WORKER_IMAGE}"
-    docker pull "${WORKER_IMAGE}"
+    # Skip pull if image already exists locally (e.g., built via make build)
+    if ! docker image inspect "${MANAGER_IMAGE}" >/dev/null 2>&1; then
+        log "Pulling Manager image: ${MANAGER_IMAGE}"
+        docker pull "${MANAGER_IMAGE}"
+    else
+        log "Manager image already exists locally: ${MANAGER_IMAGE}"
+    fi
+    if ! docker image inspect "${WORKER_IMAGE}" >/dev/null 2>&1; then
+        log "Pulling Worker image: ${WORKER_IMAGE}"
+        docker pull "${WORKER_IMAGE}"
+    else
+        log "Worker image already exists locally: ${WORKER_IMAGE}"
+    fi
 
     # Run Manager container
     log "Starting Manager container..."
     docker run -d \
         --name hiclaw-manager \
         --env-file "${ENV_FILE}" \
+        -e HOME=/root/manager-workspace \
+        -w /root/manager-workspace \
         -e HOST_ORIGINAL_HOME="${HICLAW_HOST_SHARE_DIR}" \
         ${YOLO_ARGS} \
         ${TZ_ARGS} \
@@ -1003,6 +1014,8 @@ install_worker() {
     log "Starting Worker: ${WORKER_NAME}..."
     docker run -d \
         --name "${CONTAINER_NAME}" \
+        -e "HOME=/root/hiclaw-fs/agents/${WORKER_NAME}" \
+        -w "/root/hiclaw-fs/agents/${WORKER_NAME}" \
         -e "HICLAW_WORKER_NAME=${WORKER_NAME}" \
         -e "HICLAW_FS_ENDPOINT=${FS}" \
         -e "HICLAW_FS_ACCESS_KEY=${FS_KEY}" \

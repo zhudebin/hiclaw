@@ -10,12 +10,12 @@
 # ============================================================
 
 ARG HIGRESS_REGISTRY=higress-registry.cn-hangzhou.cr.aliyuncs.com
+ARG OPENCLAW_BASE_TAG=latest
 
 # ============ Stage 1: mc (MinIO Client) ============
 FROM ${HIGRESS_REGISTRY}/higress/mc:20260216 AS mc
 
 # ============ Stage 2: OpenClaw + mcporter (shared base image) ============
-ARG OPENCLAW_BASE_TAG=latest
 FROM ${HIGRESS_REGISTRY}/higress/openclaw-base:${OPENCLAW_BASE_TAG} AS openclaw-build
 
 # ============ Final Image ============
@@ -50,14 +50,18 @@ COPY --from=openclaw-build /opt/openclaw /opt/openclaw
 # mcporter (use dist/cli.js directly to ensure relative imports work)
 RUN ln -sf /usr/local/lib/node_modules/mcporter/dist/cli.js /usr/local/bin/mcporter
 
-# Ensure openclaw binary is on PATH and config is found
+# Ensure openclaw binary is on PATH
+# OPENCLAW_CONFIG_PATH is intentionally NOT set here:
+# - HOME is set to the workspace via docker run -e HOME=...
+# - entrypoint creates ~/.openclaw/openclaw.json symlink in that workspace
+# - openclaw falls back to ~/.openclaw/openclaw.json when OPENCLAW_CONFIG_PATH is unset
+#   which correctly resolves to <workspace>/.openclaw/openclaw.json
 ENV PATH="/opt/openclaw/packages/clawdbot/node_modules/.bin:${PATH}"
-ENV OPENCLAW_CONFIG_PATH="/root/.openclaw/openclaw.json"
 
 # Worker entrypoint and sync scripts
 COPY scripts/ /opt/hiclaw/scripts/
 RUN chmod +x /opt/hiclaw/scripts/*.sh && \
-    printf '#!/bin/bash\nexec "${HOME}/hiclaw-fs/agents/${HICLAW_WORKER_NAME}/skills/file-sync/scripts/hiclaw-sync.sh" "$@"\n' \
+    printf '#!/bin/bash\nexec "/root/hiclaw-fs/agents/${HICLAW_WORKER_NAME}/skills/file-sync/scripts/hiclaw-sync.sh" "$@"\n' \
     > /usr/local/bin/hiclaw-sync && chmod +x /usr/local/bin/hiclaw-sync
 
 # hiclaw-fs root (mirrors Manager's ~/hiclaw-fs/ layout)

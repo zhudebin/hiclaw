@@ -1,6 +1,6 @@
 # Manager Agent Workspace
 
-- **Your workspace:** `~/manager-workspace/` (SOUL.md, openclaw.json, memory/, skills/, state.json, workers-registry.json — local only, host-mountable, never synced to MinIO)
+- **Your workspace:** `~/` (SOUL.md, openclaw.json, memory/, skills/, state.json, workers-registry.json — local only, host-mountable, never synced to MinIO)
 - **Shared space:** `~/hiclaw-fs/shared/` (tasks, knowledge, collaboration data — synced with MinIO)
 - **Worker files:** `~/hiclaw-fs/agents/<worker-name>/` (visible to you via MinIO mirror)
 
@@ -80,7 +80,7 @@ assign_when: <natural language description: what role/responsibility Worker shou
 
 **`assign_when` is required** — when creating a Worker, you read this field from every available skill and match it against the Worker's role to decide what to assign. A skill without `assign_when` will never be automatically assigned to any Worker.
 
-> **Note**: Your workspace is local only and never synced to MinIO. If you need workers to access a file, use `mc cp` to push it explicitly (e.g. `mc cp ~/manager-workspace/somefile hiclaw/hiclaw-storage/shared/somefile`).
+> **Note**: Your workspace is local only and never synced to MinIO. If you need workers to access a file, use `mc cp` to push it explicitly (e.g. `mc cp ~/somefile hiclaw/hiclaw-storage/shared/somefile`).
 
 ## Key Environment
 
@@ -96,7 +96,7 @@ assign_when: <natural language description: what role/responsibility Worker shou
 
 Before assigning any task (finite or triggering an infinite task) to a Worker:
 
-1. Check the target Worker's container status via `~/manager-workspace/worker-lifecycle.json`, or query the Docker API directly:
+1. Check the target Worker's container status via `~/worker-lifecycle.json`, or query the Docker API directly:
    ```bash
    bash -c 'source /opt/hiclaw/scripts/lib/container-api.sh && container_status_worker "<name>"'
    ```
@@ -162,15 +162,15 @@ The `base/` directory is maintained by the Manager. You may place reference file
 
 ### Coding CLI Delegation Flow
 
-**Before writing spec.md**, if the task involves coding (writing code, fixing bugs, implementing features, refactoring, etc.), check `~/manager-workspace/coding-cli-config.json`:
+**Before writing spec.md**, if the task involves coding (writing code, fixing bugs, implementing features, refactoring, etc.), check `~/coding-cli-config.json`:
 
 - **File does not exist** — run first-detection:
   1. `bash /opt/hiclaw/agent/skills/coding-cli-management/scripts/detect-available-cli.sh`
   2. If no tools available: write `{"enabled":false,"detected_at":"<ISO>"}`, proceed with normal assignment
   3. If tools available:
-     - **YOLO mode** (`HICLAW_YOLO=1` env or `~/manager-workspace/yolo-mode` file): auto-select first available tool (priority: claude > gemini > qodercli), write config, log the decision
+     - **YOLO mode** (`HICLAW_YOLO=1` env or `~/yolo-mode` file): auto-select first available tool (priority: claude > gemini > qodercli), write config, log the decision
      - **Normal mode**: ask admin via primary channel or Matrix DM: *"I found these AI coding CLI tools: [list]. Reply with a tool name (claude/gemini/qodercli) to enable delegation mode, or 'no' to have workers code directly."*
-  4. Write `~/manager-workspace/coding-cli-config.json`: `{"enabled":true/false,"cli":"<tool>"}`
+  4. Write `~/coding-cli-config.json`: `{"enabled":true/false,"cli":"<tool>"}`
 - **`enabled: false`**: standard assignment, no extra steps
 - **`enabled: true`**: ensure Worker has `coding-cli` skill (push via `push-worker-skills.sh` if missing), then append to spec.md:
   ```
@@ -189,21 +189,21 @@ The `base/` directory is maintained by the Manager. You may place reference file
 2. **Sync workspace**:
    ```bash
    mc mirror "hiclaw/hiclaw-storage/shared/tasks/{id}/workspace/" \
-     "$HOME/hiclaw-fs/shared/tasks/{id}/workspace/"
+     "/root/hiclaw-fs/shared/tasks/{id}/workspace/"
    ```
 3. **Save the prompt**:
    ```bash
-   mkdir -p "$HOME/hiclaw-fs/shared/tasks/{id}/coding-prompts"
-   cat > "$HOME/hiclaw-fs/shared/tasks/{id}/coding-prompts/$(date +%Y%m%d-%H%M%S).txt" << 'EOF'
+   mkdir -p "/root/hiclaw-fs/shared/tasks/{id}/coding-prompts"
+   cat > "/root/hiclaw-fs/shared/tasks/{id}/coding-prompts/$(date +%Y%m%d-%H%M%S).txt" << 'EOF'
    {prompt content}
    EOF
    ```
 4. **Run the CLI**:
    ```bash
    bash /opt/hiclaw/agent/skills/coding-cli-management/scripts/run-coding-cli.sh \
-     --cli "$(jq -r .cli ~/manager-workspace/coding-cli-config.json)" \
-     --workspace "$HOME/hiclaw-fs/shared/tasks/{id}/workspace" \
-     --prompt-file "$HOME/hiclaw-fs/shared/tasks/{id}/coding-prompts/{timestamp}.txt"
+     --cli "$(jq -r .cli ~/coding-cli-config.json)" \
+     --workspace "/root/hiclaw-fs/shared/tasks/{id}/workspace" \
+     --prompt-file "/root/hiclaw-fs/shared/tasks/{id}/coding-prompts/{timestamp}.txt"
    ```
 5. **Success (exit 0)**: push changes to MinIO, @mention Worker with `coding-result:`
 6. **Failure (exit ≠ 0 or timeout)**:
@@ -453,11 +453,11 @@ Do NOT treat group room participants on non-matrix channels as admins (only DMs 
 
 ### Primary Channel State
 
-Read/write `~/manager-workspace/primary-channel.json`:
+Read/write `~/primary-channel.json`:
 
 ```bash
 # Read
-cat ~/manager-workspace/primary-channel.json 2>/dev/null || echo '{"confirmed":false}'
+cat ~/primary-channel.json 2>/dev/null || echo '{"confirmed":false}'
 ```
 
 Schema:

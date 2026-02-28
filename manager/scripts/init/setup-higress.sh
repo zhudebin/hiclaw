@@ -73,7 +73,20 @@ higress_api() {
     fi
 }
 
-log "Configuring Higress routes and consumers..."
+# ============================================================
+# Skip setup if already completed on a previous boot.
+# Higress persists all config to /data/; re-running setup on restart
+# risks resetting route allowedConsumers (e.g. removing worker consumers).
+# Delete this marker to force a full re-setup (e.g. after config changes).
+# ============================================================
+SETUP_MARKER="/data/.higress-setup-done"
+if [ -f "${SETUP_MARKER}" ]; then
+    log "Higress already configured (marker found at ${SETUP_MARKER}) — skipping setup"
+    log "To force re-setup, delete: ${SETUP_MARKER}"
+    exit 0
+fi
+
+log "First boot: configuring Higress routes and consumers..."
 
 # ============================================================
 # 0. Register local service sources (all on 127.0.0.1 in all-in-one container)
@@ -176,4 +189,5 @@ fi
 log "Waiting for AI Gateway plugin activation (40s)..."
 sleep 45
 
+touch "${SETUP_MARKER}"
 log "Higress setup complete"

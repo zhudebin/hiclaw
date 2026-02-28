@@ -55,8 +55,8 @@ if [ -n "${SKILL_NAME}" ] && ([ -n "${ADD_SKILL}" ] || [ -n "${REMOVE_SKILL}" ])
     exit 1
 fi
 
-REGISTRY_FILE="${HOME}/manager-workspace/workers-registry.json"
-WORKER_SKILLS_DIR="${HOME}/manager-workspace/worker-skills"
+REGISTRY_FILE="${HOME}/workers-registry.json"
+WORKER_SKILLS_DIR="${HOME}/worker-skills"
 MATRIX_DOMAIN="${HICLAW_MATRIX_DOMAIN:-matrix-local.hiclaw.io:8080}"
 
 # ============================================================

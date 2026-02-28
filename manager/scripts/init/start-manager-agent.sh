@@ -84,15 +84,15 @@ waitForService "MinIO" "127.0.0.1" 9000 120
 # First boot: full init via upgrade-builtins.sh
 # Subsequent boots: compare image version; upgrade only if changed
 # ============================================================
-mkdir -p ~/manager-workspace
+mkdir -p /root/manager-workspace
 
 IMAGE_VERSION=$(cat /opt/hiclaw/agent/.builtin-version 2>/dev/null || echo "unknown")
-INSTALLED_VERSION=$(cat ~/manager-workspace/.builtin-version 2>/dev/null || echo "")
+INSTALLED_VERSION=$(cat /root/manager-workspace/.builtin-version 2>/dev/null || echo "")
 
-if [ ! -f ~/manager-workspace/.initialized ]; then
+if [ ! -f /root/manager-workspace/.initialized ]; then
     log "First boot: initializing manager workspace..."
     bash /opt/hiclaw/scripts/init/upgrade-builtins.sh
-    touch ~/manager-workspace/.initialized
+    touch /root/manager-workspace/.initialized
     log "Manager workspace initialized (version: ${IMAGE_VERSION})"
 elif [ "${IMAGE_VERSION}" != "${INSTALLED_VERSION}" ]; then
     log "Upgrade detected: ${INSTALLED_VERSION} -> ${IMAGE_VERSION}"
@@ -102,9 +102,9 @@ else
     log "Workspace up to date (version: ${IMAGE_VERSION})"
 fi
 
-# Wait for mc mirror initialization (shared + worker data in ~/hiclaw-fs/)
+# Wait for mc mirror initialization (shared + worker data in /root/hiclaw-fs/)
 log "Waiting for MinIO storage initialization..."
-while [ ! -f ~/hiclaw-fs/.initialized ]; do sleep 2; done
+while [ ! -f /root/hiclaw-fs/.initialized ]; do sleep 2; done
 log "MinIO storage initialized"
 
 # ============================================================
@@ -263,16 +263,16 @@ esac
 export MODEL_REASONING=true
 log "Model: ${MODEL_NAME} (context=${MODEL_CONTEXT_WINDOW}, maxTokens=${MODEL_MAX_TOKENS}, reasoning=${MODEL_REASONING})"
 
-if [ -f ~/manager-workspace/openclaw.json ]; then
+if [ -f /root/manager-workspace/openclaw.json ]; then
     log "Manager openclaw.json already exists, updating dynamic fields only (preserving user customizations)..."
     jq --arg token "${MANAGER_TOKEN}" \
        --arg key "${HICLAW_MANAGER_GATEWAY_KEY}" \
        '.channels.matrix.accessToken = $token | .hooks.token = $key | .models.providers["hiclaw-gateway"].apiKey = $key' \
-       ~/manager-workspace/openclaw.json > /tmp/openclaw.json.tmp && \
-        mv /tmp/openclaw.json.tmp ~/manager-workspace/openclaw.json
+       /root/manager-workspace/openclaw.json > /tmp/openclaw.json.tmp && \
+        mv /tmp/openclaw.json.tmp /root/manager-workspace/openclaw.json
 else
     log "Manager openclaw.json not found, generating from template..."
-    envsubst < /opt/hiclaw/configs/manager-openclaw.json.tmpl > ~/manager-workspace/openclaw.json
+    envsubst < /opt/hiclaw/configs/manager-openclaw.json.tmpl > /root/manager-workspace/openclaw.json
 fi
 
 # ============================================================
@@ -288,28 +288,44 @@ else
 fi
 
 # ============================================================
-# Recreate missing Worker containers
-# After Manager restart, its IP may change. Workers use ExtraHosts
-# pointing to Manager IP, so they must be recreated.
+# Recreate Worker containers as needed after Manager restart.
+# Manager IP may change on restart; Workers use ExtraHosts pointing to Manager IP,
+# so any worker whose ExtraHosts IP no longer matches must be recreated.
 # ============================================================
 if container_api_available; then
-    REGISTRY_FILE="${HOME}/manager-workspace/workers-registry.json"
+    REGISTRY_FILE="/root/manager-workspace/workers-registry.json"
+    _manager_ip=$(container_get_manager_ip)
     if [ -f "${REGISTRY_FILE}" ]; then
         for _worker_name in $(jq -r '.workers | keys[]' "${REGISTRY_FILE}" 2>/dev/null); do
             [ -z "${_worker_name}" ] && continue
-            _container_name="${WORKER_CONTAINER_PREFIX}${_worker_name}"
-            # Check if the worker container exists (running or stopped)
-            if ! _api GET "/containers/${_container_name}/json" > /dev/null 2>&1; then
-                log "Worker container missing: ${_worker_name}, recreating..."
-                _creds_file="/data/worker-creds/${_worker_name}.env"
-                if [ -f "${_creds_file}" ]; then
-                    source "${_creds_file}"
-                    container_create_worker "${_worker_name}" "${_worker_name}" "${WORKER_MINIO_PASSWORD}" 2>&1 \
-                        && log "  Recreated worker: ${_worker_name}" \
-                        || log "  WARNING: Failed to recreate worker: ${_worker_name}"
-                else
-                    log "  WARNING: No credentials found for ${_worker_name}, skipping"
+            _status=$(container_status_worker "${_worker_name}")
+            if [ "${_status}" = "running" ]; then
+                # Check if ExtraHosts IP still matches current Manager IP.
+                # If ExtraHosts is empty the worker uses real DNS — no recreate needed.
+                _inspect=$(_api GET "/containers/${WORKER_CONTAINER_PREFIX}${_worker_name}/json" 2>/dev/null)
+                _extra_hosts_len=$(echo "${_inspect}" | jq -r '.HostConfig.ExtraHosts | length' 2>/dev/null)
+                if [ -z "${_extra_hosts_len}" ] || [ "${_extra_hosts_len}" = "0" ]; then
+                    log "Worker running (no ExtraHosts, real DNS): ${_worker_name}, skipping"
+                    continue
                 fi
+                _worker_ip=$(echo "${_inspect}" | jq -r '.HostConfig.ExtraHosts[0]' 2>/dev/null | cut -d: -f2)
+                if [ "${_worker_ip}" = "${_manager_ip}" ]; then
+                    log "Worker running with current Manager IP (${_manager_ip}): ${_worker_name}, skipping"
+                    continue
+                fi
+                log "Worker running but Manager IP changed (${_worker_ip} -> ${_manager_ip}): ${_worker_name}, recreating..."
+            else
+                # Container missing or stopped — always recreate.
+                log "Worker container ${_status}: ${_worker_name}, recreating..."
+            fi
+            _creds_file="/data/worker-creds/${_worker_name}.env"
+            if [ -f "${_creds_file}" ]; then
+                source "${_creds_file}"
+                container_create_worker "${_worker_name}" "${_worker_name}" "${WORKER_MINIO_PASSWORD}" 2>&1 \
+                    && log "  Recreated worker: ${_worker_name}" \
+                    || log "  WARNING: Failed to recreate worker: ${_worker_name}"
+            else
+                log "  WARNING: No credentials found for ${_worker_name} (${_creds_file} missing), skipping"
             fi
         done
     fi
@@ -319,9 +335,9 @@ fi
 # Notify workers of builtin updates if upgrade happened
 # Builtin files (AGENTS.md, skills) are already synced by upgrade-builtins.sh
 # ============================================================
-if [ -f ~/manager-workspace/.upgrade-pending-worker-notify ]; then
+if [ -f /root/manager-workspace/.upgrade-pending-worker-notify ]; then
     log "Notifying workers about builtin updates..."
-    REGISTRY_FILE="${HOME}/manager-workspace/workers-registry.json"
+    REGISTRY_FILE="/root/manager-workspace/workers-registry.json"
     if [ -f "${REGISTRY_FILE}" ]; then
         for _worker_name in $(jq -r '.workers | keys[]' "${REGISTRY_FILE}" 2>/dev/null); do
             [ -z "${_worker_name}" ] && continue
@@ -341,17 +357,29 @@ if [ -f ~/manager-workspace/.upgrade-pending-worker-notify ]; then
             fi
         done
     fi
-    rm -f ~/manager-workspace/.upgrade-pending-worker-notify
+    rm -f /root/manager-workspace/.upgrade-pending-worker-notify
 fi
 
 # ============================================================
 # Start OpenClaw Manager Agent
 # ============================================================
 log "Starting Manager Agent (OpenClaw)..."
-export OPENCLAW_CONFIG_PATH=~/manager-workspace/openclaw.json
+
+# HOME is already set to /root/manager-workspace via docker run -e HOME=...
+export OPENCLAW_CONFIG_PATH="/root/manager-workspace/openclaw.json"
 
 # Symlink to default OpenClaw config path so CLI commands find the config
-mkdir -p /root/.openclaw
-ln -sf ~/manager-workspace/openclaw.json /root/.openclaw/openclaw.json
+mkdir -p "${HOME}/.openclaw"
+ln -sf "/root/manager-workspace/openclaw.json" "${HOME}/.openclaw/openclaw.json"
 
+# Ensure host credential symlinks exist under HOME so agent CLIs find them
+if [ -d "/host-share" ]; then
+    for config_dir in .claude .gemini .qoder; do
+        [ -d "/host-share/${config_dir}" ] && ln -sfn "/host-share/${config_dir}" "${HOME}/${config_dir}"
+    done
+    [ -f "/host-share/.gitconfig" ] && ln -sf "/host-share/.gitconfig" "${HOME}/.gitconfig"
+fi
+
+log "HOME=${HOME} (manager-workspace, host-mounted)"
+cd "${HOME}"
 exec openclaw gateway run --verbose --force

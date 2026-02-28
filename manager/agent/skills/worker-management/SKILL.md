@@ -47,12 +47,12 @@ EOF
 
 1. List all available skills:
    ```bash
-   ls ~/manager-workspace/worker-skills/
+   ls ~/worker-skills/
    ```
 
 2. Read the YAML frontmatter at the top of each skill's `SKILL.md` to get its `assign_when` condition:
    ```bash
-   head -8 ~/manager-workspace/worker-skills/<skill-name>/SKILL.md
+   head -8 ~/worker-skills/<skill-name>/SKILL.md
    ```
    Each `SKILL.md` starts with:
    ```yaml
@@ -149,7 +149,7 @@ curl -s "http://127.0.0.1:6167/_matrix/client/v3/rooms/<ROOM_ID>/messages?dir=b&
 
 ## Worker Lifecycle Management
 
-The Manager automatically detects idle Workers during Heartbeat and stops their containers; when assigning tasks it automatically wakes up stopped containers. All state is persisted in `~/manager-workspace/worker-lifecycle.json` (local only, never synced to MinIO).
+The Manager automatically detects idle Workers during Heartbeat and stops their containers; when assigning tasks it automatically wakes up stopped containers. All state is persisted in `~/worker-lifecycle.json` (local only, never synced to MinIO).
 
 ### worker-lifecycle.json Structure
 
@@ -195,11 +195,11 @@ bash /opt/hiclaw/agent/skills/worker-management/scripts/lifecycle-worker.sh --ac
 
 ### Changing the Idle Timeout
 
-Edit `~/manager-workspace/worker-lifecycle.json` directly and update the `idle_timeout_minutes` field (default: 30):
+Edit `~/worker-lifecycle.json` directly and update the `idle_timeout_minutes` field (default: 30):
 
 ```bash
 # Example: change to 60 minutes
-jq '.idle_timeout_minutes = 60' ~/manager-workspace/worker-lifecycle.json > /tmp/lc.json && mv /tmp/lc.json ~/manager-workspace/worker-lifecycle.json
+jq '.idle_timeout_minutes = 60' ~/worker-lifecycle.json > /tmp/lc.json && mv /tmp/lc.json ~/worker-lifecycle.json
 ```
 
 ### start vs create
@@ -220,11 +220,11 @@ jq '.idle_timeout_minutes = 60' ~/manager-workspace/worker-lifecycle.json > /tmp
 
 ## Manage Worker Skills
 
-Manager centrally manages all Worker skills. The canonical skill definitions live in `~/manager-workspace/worker-skills/`. Worker skill assignments are tracked in `~/manager-workspace/workers-registry.json`.
+Manager centrally manages all Worker skills. The canonical skill definitions live in `~/worker-skills/`. Worker skill assignments are tracked in `~/workers-registry.json`.
 
 ### workers-registry.json
 
-Location: `~/manager-workspace/workers-registry.json`
+Location: `~/workers-registry.json`
 
 Format:
 ```json
@@ -248,7 +248,7 @@ Format:
 ### worker-skills/ Directory Structure
 
 ```
-~/manager-workspace/worker-skills/
+~/worker-skills/
 ├── README.md
 └── github-operations/
     └── SKILL.md
@@ -279,7 +279,7 @@ After pushing skills, the script notifies the affected Worker(s) via Matrix @men
 
 ### How to Add a New Custom Skill
 
-1. Create the skill directory under `~/manager-workspace/worker-skills/<skill-name>/` and write its files (`SKILL.md` must include `name`, `description`, and `assign_when` frontmatter; place any scripts under `scripts/`). The manager workspace is local only — use `push-worker-skills.sh` to distribute skills to workers.
+1. Create the skill directory under `~/worker-skills/<skill-name>/` and write its files (`SKILL.md` must include `name`, `description`, and `assign_when` frontmatter; place any scripts under `scripts/`). The manager workspace is local only — use `push-worker-skills.sh` to distribute skills to workers.
 
 2. Assign to Worker：
    ```bash

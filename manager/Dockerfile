@@ -10,6 +10,7 @@
 # ============================================================
 
 ARG HIGRESS_REGISTRY=higress-registry.cn-hangzhou.cr.aliyuncs.com
+ARG OPENCLAW_BASE_TAG=latest
 
 # ============ Stage 1: Tuwunel Matrix Server ============
 FROM ${HIGRESS_REGISTRY}/higress/tuwunel:20260216 AS tuwunel
@@ -24,7 +25,6 @@ FROM ${HIGRESS_REGISTRY}/higress/mc:20260216 AS mc
 FROM ${HIGRESS_REGISTRY}/higress/element-web:20260216 AS element-web
 
 # ============ Stage 5: OpenClaw + mcporter (shared base image) ============
-ARG OPENCLAW_BASE_TAG=latest
 FROM ${HIGRESS_REGISTRY}/higress/openclaw-base:${OPENCLAW_BASE_TAG} AS openclaw-build
 
 # Install AI coding CLI tools here (npm works correctly in this stage)

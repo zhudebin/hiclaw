@@ -29,7 +29,7 @@ Check `spec.md` for the task. If it contains `## Coding CLI Mode`, use this skil
 Set up the workspace directory under the shared filesystem:
 
 ```bash
-workspace="$HOME/hiclaw-fs/shared/tasks/{task-id}/workspace"
+workspace="/root/hiclaw-fs/shared/tasks/{task-id}/workspace"
 mkdir -p "$workspace"
 
 # Clone a repo (example)
@@ -46,7 +46,7 @@ cp -r /path/to/source "$workspace/"
 Before sending the coding-request, push all workspace files so the Manager can access them:
 
 ```bash
-mc mirror "$HOME/hiclaw-fs/shared/tasks/{task-id}/workspace/" \
+mc mirror "/root/hiclaw-fs/shared/tasks/{task-id}/workspace/" \
   hiclaw/hiclaw-storage/shared/tasks/{task-id}/workspace/
 ```
 
@@ -57,10 +57,10 @@ Before modifying the workspace or sending a coding-request, check if the task di
 ```bash
 # Sync latest state from MinIO
 mc mirror "hiclaw/hiclaw-storage/shared/tasks/{task-id}/" \
-  "$HOME/hiclaw-fs/shared/tasks/{task-id}/"
+  "/root/hiclaw-fs/shared/tasks/{task-id}/"
 
 # Check for processing marker
-if [ -f "$HOME/hiclaw-fs/shared/tasks/{task-id}/.processing" ]; then
+if [ -f "/root/hiclaw-fs/shared/tasks/{task-id}/.processing" ]; then
     echo "Task directory is being processed. Wait for manager to complete."
     # Do NOT send coding-request yet; wait and retry
 fi

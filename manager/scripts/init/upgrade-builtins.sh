@@ -11,7 +11,7 @@
 set -e
 
 AGENT_SRC="/opt/hiclaw/agent"
-WORKSPACE="${HOME}/manager-workspace"
+WORKSPACE="/root/manager-workspace"
 REGISTRY="${WORKSPACE}/workers-registry.json"
 IMAGE_VERSION=$(cat "${AGENT_SRC}/.builtin-version" 2>/dev/null || echo "unknown")
 

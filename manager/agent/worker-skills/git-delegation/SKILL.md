@@ -83,10 +83,10 @@ Before making changes, check if the task directory is being processed:
 ```bash
 # Sync from MinIO
 mc mirror "hiclaw/hiclaw-storage/shared/tasks/{task-id}/" \
-  "$HOME/hiclaw-fs/shared/tasks/{task-id}/"
+  "/root/hiclaw-fs/shared/tasks/{task-id}/"
 
 # Check for processing marker
-if [ -f "$HOME/hiclaw-fs/shared/tasks/{task-id}/.processing" ]; then
+if [ -f "/root/hiclaw-fs/shared/tasks/{task-id}/.processing" ]; then
     echo "Task directory is being processed. Wait for manager to complete."
 fi
 ```
@@ -140,7 +140,7 @@ cat src/main.py
 # ... make changes ...
 
 # When ready to commit, sync to MinIO first
-mc mirror "$HOME/hiclaw-fs/shared/tasks/task-20260225/" \
+mc mirror "/root/hiclaw-fs/shared/tasks/task-20260225/" \
   "hiclaw/hiclaw-storage/shared/tasks/task-20260225/" --overwrite
 ```
 

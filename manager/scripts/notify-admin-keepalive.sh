@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-PRIMARY_FILE="${HOME}/manager-workspace/primary-channel.json"
+PRIMARY_FILE="${HOME}/primary-channel.json"
 GATEWAY_URL="http://localhost:18799"
 GATEWAY_TOKEN="${MANAGER_GATEWAY_KEY:-}"
 

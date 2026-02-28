@@ -49,11 +49,11 @@ operations:
 
 ```bash
 task_id="task-YYYYMMDD-HHMMSS"
-workspace="$HOME/hiclaw-fs/shared/tasks/${task_id}/workspace/{repo-name}"
+workspace="/root/hiclaw-fs/shared/tasks/${task_id}/workspace/{repo-name}"
 
 # Sync from MinIO
 mc mirror "hiclaw/hiclaw-storage/shared/tasks/${task_id}/" \
-  "$HOME/hiclaw-fs/shared/tasks/${task_id}/"
+  "/root/hiclaw-fs/shared/tasks/${task_id}/"
 
 # Check for processing marker
 bash /opt/hiclaw/agent/skills/task-coordination/scripts/check-processing-marker.sh "$task_id"
@@ -90,7 +90,7 @@ You know how to use git. Execute the commands the Worker requests. If something 
 bash /opt/hiclaw/agent/skills/task-coordination/scripts/remove-processing-marker.sh "$task_id"
 
 # Sync to MinIO
-mc mirror "$HOME/hiclaw-fs/shared/tasks/${task_id}/" \
+mc mirror "/root/hiclaw-fs/shared/tasks/${task_id}/" \
   "hiclaw/hiclaw-storage/shared/tasks/${task_id}/" --overwrite
 ```
 

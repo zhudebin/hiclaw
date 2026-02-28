@@ -16,7 +16,7 @@ See SOUL.md "多渠道身份识别与权限" for the priority rules. In brief:
 
 ## Trusted Contacts
 
-File: `~/manager-workspace/trusted-contacts.json`
+File: `~/trusted-contacts.json`
 
 ```json
 {
@@ -41,10 +41,10 @@ Trigger: unknown sender messages in a group room → silently ignore. If the hum
    # Read existing, append, write back (use jq)
    jq --arg ch "<channel>" --arg sid "<sender_id>" --arg ts "<ISO-8601 now>" \
      '.contacts += [{"channel": $ch, "sender_id": $sid, "approved_at": $ts, "note": ""}]' \
-     ~/manager-workspace/trusted-contacts.json > /tmp/tc.json && \
-     mv /tmp/tc.json ~/manager-workspace/trusted-contacts.json
+     ~/trusted-contacts.json > /tmp/tc.json && \
+     mv /tmp/tc.json ~/trusted-contacts.json
    ```
-   If file doesn't exist yet: `echo '{"contacts":[]}' > ~/manager-workspace/trusted-contacts.json` first.
+   If file doesn't exist yet: `echo '{"contacts":[]}' > ~/trusted-contacts.json` first.
 3. Confirm to admin in their language, e.g.: "OK, I'll engage with them. Note: I won't share any sensitive information with them."
 
 ### Communicating with Trusted Contacts
@@ -61,13 +61,13 @@ When admin revokes access ("don't talk to X anymore"):
 ```bash
 jq --arg ch "<channel>" --arg sid "<sender_id>" \
   '.contacts |= map(select(.channel != $ch or .sender_id != $sid))' \
-  ~/manager-workspace/trusted-contacts.json > /tmp/tc.json && \
-  mv /tmp/tc.json ~/manager-workspace/trusted-contacts.json
+  ~/trusted-contacts.json > /tmp/tc.json && \
+  mv /tmp/tc.json ~/trusted-contacts.json
 ```
 
 ## Primary Channel State
 
-File: `~/manager-workspace/primary-channel.json`
+File: `~/primary-channel.json`
 
 ```json
 {
@@ -94,7 +94,7 @@ Fields:
 
 Read with fallback:
 ```bash
-cat ~/manager-workspace/primary-channel.json 2>/dev/null || echo '{"confirmed":false}'
+cat ~/primary-channel.json 2>/dev/null || echo '{"confirmed":false}'
 ```
 
 ## First-Contact Protocol
@@ -108,7 +108,7 @@ Steps:
    > I noticed this is your first time contacting me via [Channel Name]. Would you like to set [Channel Name] as your primary channel? If so, my daily reminders and proactive notifications will be sent here instead of Matrix DM. Reply "yes" to confirm, or "no" to keep using Matrix DM.
 4. On **"yes" / "confirm" / 「是」/ 「确认」** (or equivalent in their language):
    ```bash
-   cat > ~/manager-workspace/primary-channel.json << 'EOF'
+   cat > ~/primary-channel.json << 'EOF'
    {
      "confirmed": true,
      "channel": "<channel>",

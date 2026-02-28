@@ -65,7 +65,7 @@ export MODEL_REASONING=true
 export MODEL_CONTEXT_WINDOW="${CTX}"
 export MODEL_MAX_TOKENS="${MAX}"
 
-OUTPUT_DIR="${HOME}/hiclaw-fs/agents/${WORKER_NAME}"
+OUTPUT_DIR="/root/hiclaw-fs/agents/${WORKER_NAME}"
 mkdir -p "${OUTPUT_DIR}"
 
 envsubst < /opt/hiclaw/agent/skills/worker-management/references/worker-openclaw.json.tmpl > "${OUTPUT_DIR}/openclaw.json"

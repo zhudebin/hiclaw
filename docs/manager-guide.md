@@ -139,7 +139,7 @@ To manually trigger keepalive for a specific room:
 
 ```bash
 docker exec hiclaw-manager bash -c \
-  'MANAGER_MATRIX_TOKEN=$(jq -r .channels.matrix.accessToken ~/manager-workspace/openclaw.json) \
+  'MANAGER_MATRIX_TOKEN=$(jq -r .channels.matrix.accessToken ~/openclaw.json) \
    bash /opt/hiclaw/scripts/session-keepalive.sh --action keepalive --room "!roomid:domain"'
 ```
 
@@ -147,11 +147,11 @@ To view active rooms and current preferences:
 
 ```bash
 docker exec hiclaw-manager bash -c \
-  'MANAGER_MATRIX_TOKEN=$(jq -r .channels.matrix.accessToken ~/manager-workspace/openclaw.json) \
+  'MANAGER_MATRIX_TOKEN=$(jq -r .channels.matrix.accessToken ~/openclaw.json) \
    bash /opt/hiclaw/scripts/session-keepalive.sh --action list-rooms'
 
 docker exec hiclaw-manager bash -c \
-  'MANAGER_MATRIX_TOKEN=$(jq -r .channels.matrix.accessToken ~/manager-workspace/openclaw.json) \
+  'MANAGER_MATRIX_TOKEN=$(jq -r .channels.matrix.accessToken ~/openclaw.json) \
    bash /opt/hiclaw/scripts/session-keepalive.sh --action load-prefs'
 ```
 
@@ -302,7 +302,7 @@ Coding CLI Delegation lets Workers offload coding tasks (writing code, fixing bu
 
 ### How It Works
 
-When the Manager assigns a coding task, it checks `~/manager-workspace/coding-cli-config.json`:
+When the Manager assigns a coding task, it checks `~/coding-cli-config.json`:
 
 - **Config not found**: runs first-detection automatically (see below)
 - **`enabled: false`**: standard task assignment, no delegation
@@ -328,7 +328,7 @@ The Manager image ships with:
 
 ### Configuration File
 
-`~/manager-workspace/coding-cli-config.json`:
+`~/coding-cli-config.json`:
 
 ```json
 {

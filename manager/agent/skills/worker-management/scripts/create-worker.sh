@@ -45,7 +45,7 @@ fi
 MATRIX_DOMAIN="${HICLAW_MATRIX_DOMAIN:-matrix-local.hiclaw.io:8080}"
 ADMIN_USER="${HICLAW_ADMIN_USER:-admin}"
 CONSUMER_NAME="worker-${WORKER_NAME}"
-SOUL_FILE="${HOME}/hiclaw-fs/agents/${WORKER_NAME}/SOUL.md"
+SOUL_FILE="/root/hiclaw-fs/agents/${WORKER_NAME}/SOUL.md"
 
 if [ ! -f "${SOUL_FILE}" ]; then
     echo '{"error": "SOUL.md not found at '"${SOUL_FILE}"'. Write it first, then re-run."}'
@@ -141,10 +141,14 @@ else
     fi
 fi
 
+# Pre-generate gateway key if not loaded from persisted creds (for new workers)
+[ -z "${WORKER_GATEWAY_KEY}" ] && WORKER_GATEWAY_KEY=$(generateKey 32)
+
 # Persist credentials for future re-creation
 cat > "${WORKER_CREDS_FILE}" <<CREDS
 WORKER_PASSWORD="${WORKER_PASSWORD}"
 WORKER_MINIO_PASSWORD="${WORKER_MINIO_PASSWORD}"
+WORKER_GATEWAY_KEY="${WORKER_GATEWAY_KEY}"
 CREDS
 chmod 600 "${WORKER_CREDS_FILE}"
 
@@ -216,7 +220,7 @@ log "  Room created: ${ROOM_ID}"
 # Step 3: Create Higress Consumer (key-auth)
 # ============================================================
 log "Step 3: Creating Higress consumer..."
-WORKER_KEY=$(generateKey 32)
+WORKER_KEY="${WORKER_GATEWAY_KEY}"
 CONSUMER_RESP=$(curl -sf -X POST http://127.0.0.1:8001/v1/consumers \
     -b "${HIGRESS_COOKIE_FILE}" \
     -H 'Content-Type: application/json' \
@@ -325,15 +329,15 @@ if [ -n "${TARGET_MCP_LIST}" ]; then
         MCPORTER_JSON="${MCPORTER_JSON}\"${mcp_name}\":{\"url\":\"http://${AIGW_DOMAIN}:8080/mcp-servers/${mcp_name}/mcp\",\"transport\":\"http\",\"headers\":{\"Authorization\":\"Bearer ${WORKER_KEY}\"}}"
     done
     MCPORTER_JSON="${MCPORTER_JSON}}}"
-    echo "${MCPORTER_JSON}" | jq . > "${HOME}/hiclaw-fs/agents/${WORKER_NAME}/mcporter-servers.json"
+    echo "${MCPORTER_JSON}" | jq . > "/root/hiclaw-fs/agents/${WORKER_NAME}/mcporter-servers.json"
 fi
 
 # ============================================================
 # Step 6.5: Add existing Workers to new Worker's groupAllowFrom
 # ============================================================
 log "Step 6.5: Adding existing Workers to new Worker's groupAllowFrom..."
-NEW_WORKER_CONFIG="${HOME}/hiclaw-fs/agents/${WORKER_NAME}/openclaw.json"
-REGISTRY_FILE_EARLY="${HOME}/manager-workspace/workers-registry.json"
+NEW_WORKER_CONFIG="/root/hiclaw-fs/agents/${WORKER_NAME}/openclaw.json"
+REGISTRY_FILE_EARLY="${HOME}/workers-registry.json"
 if [ -f "${REGISTRY_FILE_EARLY}" ]; then
     EXISTING_WORKERS_EARLY=$(jq -r '.workers | keys[]' "${REGISTRY_FILE_EARLY}" 2>/dev/null | grep -v "^${WORKER_NAME}$" || true)
     for ew in ${EXISTING_WORKERS_EARLY}; do
@@ -356,7 +360,7 @@ fi
 # Step 7: Update Manager groupAllowFrom
 # ============================================================
 log "Step 7: Updating Manager groupAllowFrom..."
-MANAGER_CONFIG="${HOME}/manager-workspace/openclaw.json"
+MANAGER_CONFIG="${HOME}/openclaw.json"
 WORKER_MATRIX_ID="@${WORKER_NAME}:${MATRIX_DOMAIN}"
 if [ -f "${MANAGER_CONFIG}" ]; then
     ALREADY_IN=$(jq -r --arg w "${WORKER_MATRIX_ID}" \
@@ -377,7 +381,7 @@ fi
 # Step 8: Sync to MinIO
 # ============================================================
 log "Step 8: Syncing to MinIO..."
-mc mirror "${HOME}/hiclaw-fs/agents/${WORKER_NAME}/" "hiclaw/hiclaw-storage/agents/${WORKER_NAME}/" --overwrite 2>&1 | tail -5
+mc mirror "/root/hiclaw-fs/agents/${WORKER_NAME}/" "hiclaw/hiclaw-storage/agents/${WORKER_NAME}/" --overwrite 2>&1 | tail -5
 mc stat "hiclaw/hiclaw-storage/agents/${WORKER_NAME}/SOUL.md" > /dev/null 2>&1 \
     || _fail "SOUL.md not found in MinIO after sync"
 mc stat "hiclaw/hiclaw-storage/agents/${WORKER_NAME}/openclaw.json" > /dev/null 2>&1 \
@@ -456,7 +460,7 @@ fi
 # Step 8.5: Update workers-registry.json and push skills
 # ============================================================
 log "Step 8.5: Updating workers-registry and pushing skills..."
-REGISTRY_FILE="${HOME}/manager-workspace/workers-registry.json"
+REGISTRY_FILE="${HOME}/workers-registry.json"
 
 # Ensure registry file exists
 if [ ! -f "${REGISTRY_FILE}" ]; then

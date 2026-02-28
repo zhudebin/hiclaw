@@ -2,7 +2,7 @@
 # lifecycle-worker.sh - Worker container lifecycle management
 #
 # Manages automatic stop/start of Worker containers based on idle time.
-# State is persisted in ~/manager-workspace/worker-lifecycle.json.
+# State is persisted in ~/worker-lifecycle.json.
 #
 # Usage:
 #   lifecycle-worker.sh --action sync-status
@@ -14,9 +14,9 @@ set -euo pipefail
 
 source /opt/hiclaw/scripts/lib/container-api.sh
 
-LIFECYCLE_FILE="${HOME}/manager-workspace/worker-lifecycle.json"
-REGISTRY_FILE="${HOME}/manager-workspace/workers-registry.json"
-STATE_FILE="${HOME}/manager-workspace/state.json"
+LIFECYCLE_FILE="${HOME}/worker-lifecycle.json"
+REGISTRY_FILE="${HOME}/workers-registry.json"
+STATE_FILE="${HOME}/state.json"
 
 _ts() {
     date -u '+%Y-%m-%dT%H:%M:%SZ'

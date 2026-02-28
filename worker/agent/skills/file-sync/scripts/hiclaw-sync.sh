@@ -4,7 +4,7 @@
 # Uses ~/hiclaw-fs/ layout matching Manager's directory structure.
 
 WORKER_NAME="${HICLAW_WORKER_NAME:?HICLAW_WORKER_NAME is required}"
-HICLAW_ROOT="${HOME}/hiclaw-fs"
+HICLAW_ROOT="/root/hiclaw-fs"
 WORKSPACE="${HICLAW_ROOT}/agents/${WORKER_NAME}"
 
 mc mirror "hiclaw/hiclaw-storage/agents/${WORKER_NAME}/" "${WORKSPACE}/" --overwrite 2>&1

@@ -22,10 +22,10 @@ set -euo pipefail
 MATRIX_URL="http://127.0.0.1:6167"
 MATRIX_TOKEN="${MANAGER_MATRIX_TOKEN:-}"
 
-REGISTRY_FILE="${HOME}/manager-workspace/workers-registry.json"
-LIFECYCLE_FILE="${HOME}/manager-workspace/worker-lifecycle.json"
+REGISTRY_FILE="${HOME}/workers-registry.json"
+LIFECYCLE_FILE="${HOME}/worker-lifecycle.json"
 LIFECYCLE_SCRIPT="/opt/hiclaw/agent/skills/worker-management/scripts/lifecycle-worker.sh"
-PREFS_FILE="${HOME}/manager-workspace/session-keepalive-prefs.json"
+PREFS_FILE="${HOME}/session-keepalive-prefs.json"
 
 _log() {
     echo "[session-keepalive $(date '+%Y-%m-%d %H:%M:%S')] $1"
@@ -83,7 +83,7 @@ _collect_rooms() {
         jq -r '.workers | to_entries[] | "\(.value.room_id)\tworker\t\(.key)"' \
             "$REGISTRY_FILE" 2>/dev/null
     fi
-    for meta in "${HOME}/hiclaw-fs/shared/projects"/*/meta.json; do
+    for meta in "/root/hiclaw-fs/shared/projects"/*/meta.json; do
         [ -f "$meta" ] || continue
         local status room_id name
         status=$(jq -r '.status // empty' "$meta" 2>/dev/null)
@@ -150,7 +150,7 @@ action_load_prefs() {
             fi
         fi
         if [ -z "$found_type" ]; then
-            for meta in "${HOME}/hiclaw-fs/shared/projects"/*/meta.json; do
+            for meta in "/root/hiclaw-fs/shared/projects"/*/meta.json; do
                 [ -f "$meta" ] || continue
                 local meta_room
                 meta_room=$(jq -r '.room_id // empty' "$meta" 2>/dev/null)

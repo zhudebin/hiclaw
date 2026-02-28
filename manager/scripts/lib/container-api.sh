@@ -135,16 +135,19 @@ container_create_worker() {
         _log "  ExtraHosts: ${extra_hosts}"
     fi
 
+    local worker_home="/root/hiclaw-fs/agents/${worker_name}"
     local create_payload
     create_payload=$(cat <<PAYLOAD
 {
     "Image": "${WORKER_IMAGE}",
     "Env": [
+        "HOME=${worker_home}",
         "HICLAW_WORKER_NAME=${worker_name}",
         "HICLAW_FS_ENDPOINT=${fs_endpoint}",
         "HICLAW_FS_ACCESS_KEY=${fs_access_key}",
         "HICLAW_FS_SECRET_KEY=${fs_secret_key}"
     ],
+    "WorkingDir": "${worker_home}",
     "HostConfig": ${host_config}
 }
 PAYLOAD

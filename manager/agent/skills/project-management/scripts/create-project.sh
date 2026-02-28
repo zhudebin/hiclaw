@@ -54,7 +54,7 @@ fi
 # Step 1: Create project directories and files
 # ============================================================
 log "Step 1: Creating project directories..."
-PROJECT_DIR="${HOME}/hiclaw-fs/shared/projects/${PROJECT_ID}"
+PROJECT_DIR="/root/hiclaw-fs/shared/projects/${PROJECT_ID}"
 mkdir -p "${PROJECT_DIR}"
 
 NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -136,7 +136,7 @@ mv /tmp/proj-meta-updated.json "${PROJECT_DIR}/meta.json"
 # Step 3: Add Workers to Manager's groupAllowFrom
 # ============================================================
 log "Step 3: Updating Manager groupAllowFrom..."
-MANAGER_CONFIG="${HOME}/hiclaw-fs/agents/manager/openclaw.json"
+MANAGER_CONFIG="/root/hiclaw-fs/agents/manager/openclaw.json"
 if [ -f "${MANAGER_CONFIG}" ]; then
     UPDATED_CONFIG="${MANAGER_CONFIG}"
     for worker in "${WORKER_ARR[@]}"; do

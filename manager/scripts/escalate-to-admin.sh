@@ -21,7 +21,7 @@ done
 [ -z "$SOURCE_SESSION" ] && { echo "Missing --source-session" >&2; exit 2; }
 [ -z "$QUESTION" ]       && { echo "Missing --question" >&2;       exit 2; }
 
-PRIMARY_FILE="${HOME}/manager-workspace/primary-channel.json"
+PRIMARY_FILE="${HOME}/primary-channel.json"
 GATEWAY_URL="http://localhost:18799"
 GATEWAY_TOKEN="${MANAGER_GATEWAY_KEY:-}"
 

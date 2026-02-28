@@ -1,8 +1,8 @@
 #!/bin/bash
 # start-mc-mirror.sh - Initialize MinIO storage and start bidirectional file sync
 #
-# Manager's own workspace (~/manager-workspace/) is LOCAL ONLY and not synced to MinIO.
-# MinIO only stores shared data and worker configs (~/hiclaw-fs/).
+# Manager's own workspace (/root/manager-workspace/) is LOCAL ONLY and not synced to MinIO.
+# MinIO only stores shared data and worker configs (/root/hiclaw-fs/).
 
 source /opt/hiclaw/scripts/lib/base.sh
 waitForService "MinIO" "127.0.0.1" 9000
@@ -19,19 +19,21 @@ for dir in shared/knowledge shared/tasks workers; do
 done
 
 # Create local mirror directory (for shared + worker data only)
-mkdir -p ~/hiclaw-fs
+# Use absolute path because HOME may point to manager-workspace
+HICLAW_FS_ROOT="/root/hiclaw-fs"
+mkdir -p "${HICLAW_FS_ROOT}"
 
 # Initial full sync to local (workers + shared)
-mc mirror hiclaw/hiclaw-storage/ ~/hiclaw-fs/ --overwrite
+mc mirror hiclaw/hiclaw-storage/ "${HICLAW_FS_ROOT}/" --overwrite
 
 # Signal that initialization is complete
-touch ~/hiclaw-fs/.initialized
+touch "${HICLAW_FS_ROOT}/.initialized"
 
-log "MinIO storage initialized and synced to ~/hiclaw-fs/"
+log "MinIO storage initialized and synced to ${HICLAW_FS_ROOT}/"
 
 # Start bidirectional sync (shared + worker data only — manager workspace excluded)
 # Local -> Remote: real-time watch (filesystem notify)
-mc mirror --watch ~/hiclaw-fs/ hiclaw/hiclaw-storage/ --overwrite &
+mc mirror --watch "${HICLAW_FS_ROOT}/" hiclaw/hiclaw-storage/ --overwrite &
 LOCAL_TO_REMOTE_PID=$!
 
 log "Local->Remote sync started (PID: ${LOCAL_TO_REMOTE_PID})"
@@ -39,5 +41,5 @@ log "Local->Remote sync started (PID: ${LOCAL_TO_REMOTE_PID})"
 # Remote -> Local: periodic pull every 5 minutes (aligned with heartbeat)
 while true; do
     sleep 300
-    mc mirror hiclaw/hiclaw-storage/ ~/hiclaw-fs/ --overwrite --newer-than "5m" 2>/dev/null || true
+    mc mirror hiclaw/hiclaw-storage/ "${HICLAW_FS_ROOT}/" --overwrite --newer-than "5m" 2>/dev/null || true
 done

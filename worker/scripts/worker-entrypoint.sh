@@ -2,9 +2,9 @@
 # worker-entrypoint.sh - Worker Agent startup
 # Pulls config from centralized file system, starts file sync, launches OpenClaw.
 #
-# Directory layout mirrors Manager for consistent path references:
-#   ~/hiclaw-fs/agents/<WORKER_NAME>/  = Worker workspace (SOUL.md, openclaw.json, memory/)
-#   ~/hiclaw-fs/shared/                = Shared tasks, knowledge, collaboration data
+# HOME is set to the Worker workspace so all agent-generated files are synced to MinIO:
+#   ~/ = /root/hiclaw-fs/agents/<WORKER_NAME>/  (SOUL.md, openclaw.json, memory/)
+#   /root/hiclaw-fs/shared/                     = Shared tasks, knowledge, collaboration data
 
 set -e
 
@@ -17,7 +17,8 @@ log() {
     echo "[hiclaw-worker $(date '+%Y-%m-%d %H:%M:%S')] $1"
 }
 
-HICLAW_ROOT="${HOME}/hiclaw-fs"
+# Use absolute path because HOME is set to the workspace directory via docker run
+HICLAW_ROOT="/root/hiclaw-fs"
 WORKSPACE="${HICLAW_ROOT}/agents/${WORKER_NAME}"
 
 # ============================================================
@@ -49,14 +50,17 @@ while [ ! -f "${WORKSPACE}/openclaw.json" ] || [ ! -f "${WORKSPACE}/SOUL.md" ] \
     mc mirror "hiclaw/hiclaw-storage/agents/${WORKER_NAME}/" "${WORKSPACE}/" --overwrite 2>/dev/null || true
 done
 
+# HOME is already set to WORKSPACE via docker run -e HOME=...
 # Symlink to default OpenClaw config path so CLI commands find the config
-mkdir -p /root/.openclaw
-ln -sf "${WORKSPACE}/openclaw.json" /root/.openclaw/openclaw.json
+mkdir -p "${HOME}/.openclaw"
+ln -sf "${WORKSPACE}/openclaw.json" "${HOME}/.openclaw/openclaw.json"
 
 log "Worker config pulled successfully"
 
 # Ensure hiclaw-sync symlink is functional (wrapper script calls workspace path)
 ln -sf "${WORKSPACE}/skills/file-sync/scripts/hiclaw-sync.sh" /usr/local/bin/hiclaw-sync 2>/dev/null || true
+
+log "HOME set to ${HOME} (workspace files will be synced to MinIO)"
 
 # ============================================================
 # Step 3: Start file sync
@@ -66,7 +70,9 @@ ln -sf "${WORKSPACE}/skills/file-sync/scripts/hiclaw-sync.sh" /usr/local/bin/hic
 # Exclude Manager-managed configs (shared/ is separate, not under workspace)
 mc mirror --watch "${WORKSPACE}/" "hiclaw/hiclaw-storage/agents/${WORKER_NAME}/" --overwrite \
     --exclude "openclaw.json" --exclude "AGENTS.md" --exclude "SOUL.md" \
-    --exclude "mcporter-servers.json" --exclude "skills/**" &
+    --exclude "mcporter-servers.json" --exclude "skills/**" \
+    --exclude ".openclaw/**" --exclude ".cache/**" --exclude ".npm/**" \
+    --exclude ".local/**" --exclude ".mc/**" &
 log "Local->Remote sync started (PID: $!)"
 
 # Remote -> Local: periodic pull (configs from Manager + shared data)

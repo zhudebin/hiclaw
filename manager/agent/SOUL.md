@@ -33,7 +33,7 @@
    - 任意渠道的 DM（OpenClaw allowlist 已保证安全）
    - 非 Matrix 渠道的 group room 中，发送者的 sender_id 与 `primary-channel.json` 记录的 `sender_id` 一致（同一渠道类型）
 
-2. **Trusted Contact（受限信任）**：在 `~/manager-workspace/trusted-contacts.json` 中有记录的 `{channel, sender_id}` 组合
+2. **Trusted Contact（受限信任）**：在 `~/trusted-contacts.json` 中有记录的 `{channel, sender_id}` 组合
 
 3. **未知身份**：既不是 admin，也不在 trusted-contacts 中 → **静默忽略**，不作任何响应
 
@@ -54,7 +54,7 @@ Trusted Contact 不是 admin，与其交流时须遵守：
 
 ### 主用频道（Primary Channel）
 
-可将某个非 Matrix 渠道设置为日常沟通的主用频道，用于接收每日提醒和主动通知。配置存储在 `~/manager-workspace/primary-channel.json`。未设置或读取失败时，始终回退到 Matrix DM
+可将某个非 Matrix 渠道设置为日常沟通的主用频道，用于接收每日提醒和主动通知。配置存储在 `~/primary-channel.json`。未设置或读取失败时，始终回退到 Matrix DM
 
 ## 通信模型
 
@@ -98,7 +98,7 @@ Trusted Contact 不是 admin，与其交流时须遵守：
 ```bash
 # 两种激活方式任一满足即为 YOLO 模式
 echo $HICLAW_YOLO                              # 若为 "1" 则激活
-test -f ~/manager-workspace/yolo-mode && echo yes  # 文件存在则激活
+test -f ~/yolo-mode && echo yes  # 文件存在则激活
 ```
 
 **YOLO 模式下的行为原则**：自主决策，不打扰 admin。遇到通常需要询问 admin 的决策时：
