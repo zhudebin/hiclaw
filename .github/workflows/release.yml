@@ -38,6 +38,28 @@ jobs:
 
             ## Quick Start
 
+            ### macOS / Linux
+
             ```bash
             bash <(curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/install/hiclaw-install.sh)
             ```
+
+            ### Windows (PowerShell 7+)
+
+            ```powershell
+            Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/${{ github.repository }}/main/install/hiclaw-install.ps1" -UseBasicParsing).Content
+            ```
+
+            Or download and run:
+
+            ```powershell
+            # Download
+            Invoke-WebRequest -Uri "https://raw.githubusercontent.com/${{ github.repository }}/main/install/hiclaw-install.ps1" -OutFile "hiclaw-install.ps1"
+
+            # Run
+            .\hiclaw-install.ps1
+            ```
+
+            ## Documentation
+
+            For more details, see the [installation guide](https://github.com/${{ github.repository }}/blob/main/install/README.md).

@@ -23,19 +23,33 @@ See **[docs/quickstart.md](docs/quickstart.md)** for a step-by-step guide from z
 
 ### Prerequisites
 
-- Docker installed on your machine
+- **Docker Desktop** (Windows/macOS) or **Docker Engine** (Linux) installed and running
+- **PowerShell 7+** (Windows only)
 - An LLM API key (e.g., Qwen, OpenAI)
 - (Optional) A GitHub Personal Access Token for GitHub collaboration features
 
 ### Installation
 
+#### macOS / Linux
+
 ```bash
 # Quick install (interactive)
-bash <(curl -sSL https://higress.ai/hiclaw/install.sh)
+bash <(curl -fsSL https://higress.ai/hiclaw/install.sh)
 
 # Or clone and install
 git clone https://github.com/higress-group/hiclaw.git && cd hiclaw
 HICLAW_LLM_API_KEY="sk-xxx" make install
+```
+
+#### Windows (PowerShell 7+)
+
+```powershell
+# Quick install (interactive)
+Invoke-Expression (Invoke-WebRequest -Uri "https://higress.ai/hiclaw/install.ps1" -UseBasicParsing).Content
+
+# Or download and run
+Invoke-WebRequest -Uri "https://higress.ai/hiclaw/install.ps1" -OutFile "hiclaw-install.ps1"
+.\hiclaw-install.ps1
 ```
 
 The installation script will:
@@ -45,6 +59,8 @@ The installation script will:
 4. **Send a welcome message** to the Manager, which will greet you in your likely local language
 
 #### Installation Options
+
+**macOS / Linux:**
 
 ```bash
 # Non-interactive mode (use all defaults)
@@ -64,6 +80,23 @@ HICLAW_ADMIN_USER=admin \
 HICLAW_ADMIN_PASSWORD=yourpassword \
 HICLAW_TIMEZONE=Asia/Shanghai \
 make install
+```
+
+**Windows (PowerShell):**
+
+```powershell
+# Non-interactive mode (use all defaults)
+$env:HICLAW_NON_INTERACTIVE = "1"
+$env:HICLAW_LLM_API_KEY = "sk-xxx"
+.\hiclaw-install.ps1
+
+# Pre-configure all settings
+$env:HICLAW_LLM_PROVIDER = "qwen"
+$env:HICLAW_DEFAULT_MODEL = "qwen3.5-plus"
+$env:HICLAW_LLM_API_KEY = "sk-xxx"
+$env:HICLAW_ADMIN_USER = "admin"
+$env:HICLAW_ADMIN_PASSWORD = "yourpassword"
+.\hiclaw-install.ps1
 ```
 
 #### Upgrade or Reinstall
