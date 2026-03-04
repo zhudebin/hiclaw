@@ -77,6 +77,7 @@ chmod 600 "${SECRETS_FILE}"
 waitForService "Higress Gateway" "127.0.0.1" 8080 180
 waitForService "Higress Console" "127.0.0.1" 8001 180
 waitForService "Tuwunel" "127.0.0.1" 6167 120
+waitForHTTP "Tuwunel Matrix API" "http://127.0.0.1:6167/_matrix/client/versions" 120
 waitForService "MinIO" "127.0.0.1" 9000 120
 
 # ============================================================
